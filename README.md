@@ -14,7 +14,7 @@ prompt builder.
 **Manual:**
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/<you>/ComfyUI-QwenEditPlusSlots.git
+git clone https://github.com/normbarrette-arch/ComfyUI-QwenEditPlusSlots.git
 ```
 Restart ComfyUI (hard-refresh the browser too, so the slot UI JavaScript loads).
 The node appears under **advanced/conditioning** as *Text Encode Qwen Edit Plus (Slots)*.
