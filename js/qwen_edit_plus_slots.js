@@ -196,6 +196,41 @@ app.registerExtension({
             }
         }
 
+        // --- Robust persistence -------------------------------------------------
+        // Dynamic widgets (slot_count hide/show + the move buttons) can shuffle or
+        // clear ComfyUI's positional `widgets_values` on reload. To survive that,
+        // also store every slot value BY NAME and restore by name after the default
+        // positional restore (the approach VideoHelperSuite uses).
+        const PERSIST_NAMES = ["mode", "select", "separator", "slot_count", "use_manual_edit", "final_prompt"];
+        for (let i = 1; i <= MAX_SLOTS; i++) PERSIST_NAMES.push(`text_${i}`, `enable_${i}`);
+
+        const origOnSerialize = node.onSerialize;
+        node.onSerialize = function (o) {
+            origOnSerialize?.apply(this, arguments);
+            const state = {};
+            for (const name of PERSIST_NAMES) {
+                const w = getWidget(this, name);
+                if (w) state[name] = w.value;
+            }
+            o.rb_slot_state = state;
+        };
+
+        const origOnConfigure = node.onConfigure;
+        node.onConfigure = function (o) {
+            origOnConfigure?.apply(this, arguments);
+            const state = o && o.rb_slot_state;
+            if (state) {
+                for (const name of PERSIST_NAMES) {
+                    if (!(name in state)) continue;
+                    const w = getWidget(this, name);
+                    if (!w) continue;
+                    w.value = state[name];
+                    if (w.inputEl) w.inputEl.value = state[name];
+                }
+            }
+            requestAnimationFrame(() => updateSlotVisibility());
+        };
+
         // Initial layout once widgets are realized.
         requestAnimationFrame(updateSlotVisibility);
     },
