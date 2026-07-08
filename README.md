@@ -1,11 +1,14 @@
 # ComfyUI-QwenEditPlusSlots
 
-A single ComfyUI custom node — **Text Encode Qwen Edit Plus (Slots)** — that
-assembles a prompt from up to 10 toggleable, reorderable text slots (with a live,
-editable preview) and encodes it through the **Qwen Image Edit Plus** pipeline,
-outputting CONDITIONING plus the final prompt as STRING. It's a drop-in
-replacement for the core `TextEncodeQwenImageEditPlus` node with a built-in
-prompt builder.
+ComfyUI custom nodes for Qwen Image Edit workflows:
+
+- **Text Encode Qwen Edit Plus (Slots)** — assembles a prompt from up to 10
+  toggleable, reorderable text slots (with a live, editable preview) and encodes
+  it through the **Qwen Image Edit Plus** pipeline, outputting CONDITIONING plus
+  the final prompt as STRING. A drop-in replacement for the core
+  `TextEncodeQwenImageEditPlus` node with a built-in prompt builder.
+- **Skin Realism (De-Plastic)** — post-processing that fixes the plastic,
+  waxy skin Qwen (and diffusion models generally) often render on people.
 
 ## Install
 
@@ -51,3 +54,29 @@ The node appears under **advanced/conditioning** as *Text Encode Qwen Edit Plus 
 - The slot UI JavaScript is adapted from
   [kymeraj/comfyui-prompt-builder](https://github.com/kymeraj/comfyui-prompt-builder)
   (MIT) — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Node: Skin Realism (De-Plastic)
+
+`image/postprocessing` category. Fixes plastic-looking AI-rendered skin by
+**synthesizing** what the render lacks — no reference photo needed:
+
+- **pores** — band-passed micro-texture, midtone-weighted, automatically
+  attenuated where the image already has texture (never double-textures).
+- **grain** — fine luminance grain that unifies the treated region.
+- **sheen_reduction** — soft-knee compression of skin highlights (kills the
+  waxy specular look).
+- **mottling** — very low-frequency color variation (subsurface redness).
+
+**Targeting:** by default it detects skin-colored regions (approximate,
+color-based, cleaned + feathered). Wire any **MASK** into `mask` (e.g. from a
+person/face segmenter) to override precisely. `detect_skin` OFF + no mask =
+treat the whole frame.
+
+**Inputs:** `image`, master `strength`, `texture_scale` (pore size; ~1.0 for a
+face filling a ~1024px frame), the four effect sliders, `detect_skin`, `seed`
+(deterministic texture), optional `mask`.
+
+**Outputs:** `image`, plus `treated_mask` so you can inspect exactly what was
+touched.
+
+Pure torch + numpy — no extra dependencies.
